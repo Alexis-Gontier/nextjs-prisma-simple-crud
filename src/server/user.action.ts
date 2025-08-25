@@ -2,6 +2,10 @@
 
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
+import {
+    createUserSchema,
+    updateUserSchema
+} from "@/schema/user.schema";
 
 export async function getUsers() {
     try {
@@ -26,16 +30,12 @@ export async function getUsers() {
     }
 }
 
-export async function createUser({ email, firstName, lastName, age }: { email: string; firstName: string; lastName: string; age: number }) {
+export async function createUser(data: unknown) {
     try {
-        await prisma.user.create({
-            data: {
-                email,
-                firstName,
-                lastName,
-                age
-            }
-        });
+
+        const parsedData = createUserSchema.parse(data);
+
+        await prisma.user.create({ data: parsedData });
         revalidatePath("/");
 
         return {
@@ -51,17 +51,20 @@ export async function createUser({ email, firstName, lastName, age }: { email: s
     }
 }
 
-export async function updateUser({ id, email, firstName, lastName, age }: { id: number; email: string; firstName: string; lastName: string; age: number }) {
-    try {
-        await prisma.user.update({
-            where: { id },
-            data: {
-                email,
-                firstName,
-                lastName,
-                age
-            }
-        });
+    export async function updateUser(id: number, data: unknown) {
+        try {
+            const parsedData = updateUserSchema.parse(data);
+            await prisma.user.update({
+                where: {
+                    id: id
+                },
+                data: {
+                    email: parsedData.email,
+                    firstName: parsedData.firstName,
+                    lastName: parsedData.lastName,
+                    age: parsedData.age
+                }
+            });
 
         revalidatePath("/");
 

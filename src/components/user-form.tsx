@@ -2,7 +2,6 @@
 
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
-import { z } from "zod"
 
 import {
     createUserSchema,
@@ -15,7 +14,6 @@ import { Button } from "@/components/shadcn-ui/button"
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -37,38 +35,29 @@ type UserFormProps = {
 export function UserForm({ user }: UserFormProps) {
     const [isPending, startTransition] = useTransition()
 
-    const form = useForm<CreateUserInput>({
-        resolver: zodResolver(createUserSchema),
+    const form = useForm<CreateUserInput | UpdateUserInput>({
+        resolver: zodResolver(user ? updateUserSchema : createUserSchema),
         defaultValues: {
             email: user?.email || "",
             firstName: user?.firstName || "",
             lastName: user?.lastName || "",
-            age: user?.age || 0
+            age: user?.age || 0,
         }
     })
 
-    async function onSubmit(values: CreateUserInput) {
+    async function onSubmit(values: CreateUserInput | UpdateUserInput) {
         startTransition(async () => {
-            if (!user) {
-                const { success, message } = await createUser(values)
-                if (success) {
-                    console.log(message)
-                    toast.success(message)
-                    form.reset()
-                } else {
-                    console.log(message)
-                    toast.error(message)
-                }
+            const action = user
+                ? () => updateUser(user.id, values)
+                : () => createUser(values)
+
+            const { success, message } = await action()
+
+            if (success) {
+                toast.success(message)
+                if (!user) form.reset()
             } else {
-                const { success, message } = await updateUser({ id: user.id, ...values })
-                if (success) {
-                    console.log(message)
-                    toast.success(message)
-                    form.reset()
-                } else {
-                    console.log(message)
-                    toast.error(message)
-                }
+                toast.error(message)
             }
         })
     }
@@ -124,9 +113,11 @@ export function UserForm({ user }: UserFormProps) {
                             <FormControl>
                                 <Input
                                     type="number"
-                                    placeholder="Age"
                                     {...field}
-                                    onChange={(e) => field.onChange(e.target.valueAsNumber)}
+                                    onChange={(e) => {
+                                        const value = e.target.valueAsNumber
+                                        field.onChange(Number.isNaN(value) ? 0 : value)
+                                    }}
                                 />
                             </FormControl>
                             <FormMessage />
@@ -138,7 +129,9 @@ export function UserForm({ user }: UserFormProps) {
                     disabled={isPending}
                     className="w-full cursor-pointer"
                 >
-                    {isPending ? "Creating..." : "Create User"}
+                    {isPending
+                        ? user ? "Updating..." : "Creating..."
+                        : user ? "Update User" : "Create User"}
                 </Button>
             </form>
         </Form>
