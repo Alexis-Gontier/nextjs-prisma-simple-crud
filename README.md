@@ -1,6 +1,6 @@
 # 📘 Next.js Prisma Simple CRUD
 
-Une application CRUD simple construite avec Next.js 13/14 (App Router), Prisma ORM et Shadcn UI.
+Une application CRUD simple construite avec Next.js (App Router), Prisma ORM et Shadcn UI.
 L’objectif est de fournir une base claire et extensible pour démarrer rapidement un projet avec une architecture moderne.
 
 ---
